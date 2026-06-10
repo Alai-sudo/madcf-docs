@@ -1,0 +1,19 @@
+# Test Report
+
+Commands run:
+
+1. `node --check scripts/bootstrap-talents.mjs`
+
+Result: PASS
+
+2. `node scripts/bootstrap-talents.mjs --dry-run`
+
+Result: PASS
+
+Expected:
+
+- Manifest-based talent directories are listed.
+- Directories without `manifest.json` are skipped.
+- The command exits 0.
+- The command reads `~/.pitchpilot/bootstrap-token` successfully when
+  `BOOTSTRAP_TOKEN` is not set in the environment.
