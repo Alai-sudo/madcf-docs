@@ -8,8 +8,8 @@ No blocking findings.
 
 - The workflow runs on GitHub hosted `ubuntu-latest`, avoiding the local ARM
   host QEMU path that caused npm network failures during amd64 container build.
-- The workflow is manual-only via `workflow_dispatch`, so feature branch pushes
-  do not deploy production automatically.
+- The workflow deploys automatically on `push` to `main`.
+- Feature branch pushes still do not deploy production.
 - Account-specific values are still read from GitHub secrets and written only
   into the job workspace as `wrangler.deploy.local.toml`.
 - Free-form Wrangler deploy arguments were intentionally not exposed as an

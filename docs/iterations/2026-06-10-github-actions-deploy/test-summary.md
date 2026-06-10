@@ -19,7 +19,8 @@ Skipped: 0
 
 ## Notes
 
-- The new deploy path is manual GitHub Actions only.
+- The deploy path runs automatically on `push` to `main`.
+- Manual `workflow_dispatch` remains available for redeploys.
 - The workflow requires `CLOUDFLARE_API_TOKEN` and `PP_D1_DATABASE_ID`.
 - Talent sync additionally requires `BOOTSTRAP_TOKEN`.
 - The local run did not execute Cloudflare deploy.

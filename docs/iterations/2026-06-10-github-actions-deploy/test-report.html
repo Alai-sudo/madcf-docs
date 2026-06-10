@@ -38,6 +38,8 @@ Output:
 
 ```text
 yaml ok
+trigger: push main
+trigger: workflow_dispatch
 run step: Install dependencies
 run step: Check Docker builder
 run step: Validate required secrets
@@ -117,6 +119,17 @@ Notes:
 
 - Vite reported existing large chunk warnings.
 - No production deploy was triggered from the local validation pass.
+
+8. Automatic deploy trigger update
+
+Result: PASS
+
+Notes:
+
+- The workflow now runs on `push` to `main`.
+- `workflow_dispatch` remains available for manual redeploys.
+- Migration and talent sync steps run on push events and remain configurable
+  for manual dispatch events.
 </pre></main>
 </body>
 </html>

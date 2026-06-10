@@ -7,7 +7,8 @@ container image is built on a native `linux/amd64` runner instead of via QEMU.
 
 ## Approach
 
-- Add a manual GitHub Actions workflow for production deploy.
+- Add a GitHub Actions workflow that deploys automatically when `main` changes.
+- Keep `workflow_dispatch` as an operator fallback for manual redeploys.
 - Run on `ubuntu-latest`, which provides an amd64 Linux runner.
 - Keep `wrangler.toml` free of account-specific IDs.
 - Generate `wrangler.deploy.local.toml` from GitHub secrets during the job.
@@ -15,8 +16,8 @@ container image is built on a native `linux/amd64` runner instead of via QEMU.
   - `scripts/migrate-remote.sh` for D1 migrations.
   - `scripts/deploy.sh` for Wrangler deploy.
   - `scripts/bootstrap-talents.mjs` for system talent sync.
-- Keep deploy manual-only through `workflow_dispatch` to avoid accidental
-  production deploys from feature branch pushes.
+- Run D1 migrations and system talent sync by default on `main` deploys.
+- Let manual redeploys choose whether to run migrations and talent sync.
 
 ## Required GitHub Configuration
 
@@ -36,6 +37,7 @@ Repository variables:
 In scope:
 
 - Add `.github/workflows/deploy.yml`.
+- Trigger deployment on `push` to `main` and on manual `workflow_dispatch`.
 - Document this deployment path.
 
 Out of scope:
@@ -48,5 +50,6 @@ Out of scope:
 ## Test Plan
 
 - Validate the workflow YAML is syntactically loadable.
+- Verify push-trigger and manual-trigger condition expressions.
 - Run local typecheck and build.
 - Confirm no account-specific secrets are committed.
