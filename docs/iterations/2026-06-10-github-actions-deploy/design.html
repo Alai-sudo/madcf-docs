@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GitHub Actions Deploy Design</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f7f7f4; color: #181816; }
+    main { max-width: 960px; margin: 0 auto; padding: 40px 24px 64px; }
+    a { color: #2357c6; }
+    header { margin-bottom: 24px; }
+    h1 { font-size: 28px; line-height: 1.2; margin: 0 0 8px; }
+    .meta { color: #66645f; font-size: 14px; }
+    pre { white-space: pre-wrap; word-break: break-word; background: #fff; border: 1px solid #dedbd2; border-radius: 10px; padding: 20px; line-height: 1.55; overflow-x: auto; }
+    nav { display: flex; gap: 14px; flex-wrap: wrap; margin: 20px 0 28px; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #151515; color: #f2f0e8; }
+      pre { background: #1f1f1f; border-color: #36342f; }
+      .meta { color: #aaa69c; }
+      a { color: #8ab4ff; }
+    }
+  </style>
+</head>
+<body>
+  <main><header><h1>GitHub Actions Deploy Design</h1><div class="meta">Source: <a href="design.md">design.md</a></div></header><nav><a href="index.html">Index</a><a href="design.html">GitHub Actions Deploy Design</a>
+<a href="test-report.html">GitHub Actions Deploy Test Report</a>
+<a href="test-summary.html">GitHub Actions Deploy Test Summary</a>
+<a href="review.html">GitHub Actions Deploy Review</a></nav><pre># GitHub Actions Deploy
+
+## Goal
+
+Move production deployment off the current ARM host so the Cloudflare Sandbox
+container image is built on a native `linux/amd64` runner instead of via QEMU.
+
+## Approach
+
+- Add a manual GitHub Actions workflow for production deploy.
+- Run on `ubuntu-latest`, which provides an amd64 Linux runner.
+- Keep `wrangler.toml` free of account-specific IDs.
+- Generate `wrangler.deploy.local.toml` from GitHub secrets during the job.
+- Reuse the existing deployment scripts:
+  - `scripts/migrate-remote.sh` for D1 migrations.
+  - `scripts/deploy.sh` for Wrangler deploy.
+  - `scripts/bootstrap-talents.mjs` for system talent sync.
+- Keep deploy manual-only through `workflow_dispatch` to avoid accidental
+  production deploys from feature branch pushes.
+
+## Required GitHub Configuration
+
+Repository secrets:
+
+- `CLOUDFLARE_API_TOKEN`
+- `PP_D1_DATABASE_ID`
+- `BOOTSTRAP_TOKEN` if talent sync is enabled
+
+Repository variables:
+
+- `PP_BASE` optional. Defaults to
+  `https://pitchpilot-api.langgenius-opc.workers.dev` when unset.
+
+## Scope
+
+In scope:
+
+- Add `.github/workflows/deploy.yml`.
+- Document this deployment path.
+
+Out of scope:
+
+- Changing Worker runtime behavior.
+- Changing Cloudflare container image contents.
+- Moving to a Cloudflare-native remote image builder, because the current
+  Wrangler container path still builds from the repository Dockerfile.
+
+## Test Plan
+
+- Validate the workflow YAML is syntactically loadable.
+- Run local typecheck and build.
+- Confirm no account-specific secrets are committed.
+</pre></main>
+</body>
+</html>

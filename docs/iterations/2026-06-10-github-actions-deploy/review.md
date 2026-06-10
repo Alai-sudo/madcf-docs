@@ -1,0 +1,24 @@
+# Review
+
+## Findings
+
+No blocking findings.
+
+## Notes
+
+- The workflow runs on GitHub hosted `ubuntu-latest`, avoiding the local ARM
+  host QEMU path that caused npm network failures during amd64 container build.
+- The workflow is manual-only via `workflow_dispatch`, so feature branch pushes
+  do not deploy production automatically.
+- Account-specific values are still read from GitHub secrets and written only
+  into the job workspace as `wrangler.deploy.local.toml`.
+- Free-form Wrangler deploy arguments were intentionally not exposed as an
+  input to avoid shell injection risk.
+
+## Residual Risk
+
+- The actual Cloudflare container build still needs to be validated by running
+  the workflow in GitHub Actions with the required secrets configured.
+- GitHub hosted runner availability and Cloudflare container build time can
+  still affect deploy duration, but it removes the local cross-architecture
+  build bottleneck.

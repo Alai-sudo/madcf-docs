@@ -1,0 +1,91 @@
+# Test Report
+
+Commands run:
+
+1. `python3` YAML parse of `.github/workflows/deploy.yml`
+
+Result: PASS
+
+Output:
+
+```text
+yaml ok
+run step: Install dependencies
+run step: Check Docker builder
+run step: Validate required secrets
+run step: Write deploy-local Wrangler config
+run step: Typecheck
+run step: Test
+run step: Apply D1 migrations
+run step: Deploy Worker and Sandbox container
+run step: Sync system talents
+run step: Health check
+```
+
+2. `bash -n scripts/deploy.sh && bash -n scripts/migrate-remote.sh`
+
+Result: PASS
+
+3. `git diff --check`
+
+Result: PASS
+
+4. Workflow deploy-local config heredoc simulation
+
+Result: PASS
+
+Output:
+
+```text
+[[d1_databases]]
+binding = "PP"
+database_name = "pitchpilot"
+database_id = "TEST_DB_ID"
+migrations_dir = "schema/d1/migrations"
+```
+
+5. `npm run typecheck --workspaces --if-present`
+
+Result: PASS
+
+Output:
+
+```text
+> @pp/api@0.0.0 typecheck
+> tsc --noEmit
+
+> @pp/web@0.0.0 typecheck
+> tsc --noEmit
+```
+
+6. `npm test --workspaces --if-present`
+
+Result: PASS
+
+Notes:
+
+- Workspace test scripts exited 0 with no output.
+
+7. `npm run build --workspaces --if-present`
+
+Result: PASS
+
+Output summary:
+
+```text
+> @pp/api@0.0.0 build
+> echo 'wrangler bundles via main entry — no separate build step'
+
+> @pp/web@0.0.0 build
+> vite build
+
+vite v7.3.3 building client environment for production...
+6356 modules transformed.
+dist/assets/domToPptx.js           1,805.86 kB | gzip: 565.19 kB
+dist/assets/index-BOXgn7sF.js      2,592.52 kB | gzip: 729.95 kB
+```
+
+Notes:
+
+- Vite reported existing large chunk warnings.
+- No production deploy was triggered from the local validation pass.
