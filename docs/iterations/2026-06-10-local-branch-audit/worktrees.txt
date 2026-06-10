@@ -38,10 +38,6 @@ worktree /home/ubuntu/pitchpilot-cf-author-svg
 HEAD 088697f3ca6dc4920695e94b1db612938f267459
 branch refs/heads/feat/author-svg-worker-native
 
-worktree /home/ubuntu/pitchpilot-cf-branch-audit
-HEAD 53f3f2e81ae620dd471cd335e92adbd0d266ee1d
-branch refs/heads/chore/local-branch-audit
-
 worktree /home/ubuntu/pitchpilot-cf-collab-sop
 HEAD fd6d2d1203dbae89225e1eb5d5a602084ac048cd
 branch refs/heads/docs/collaboration-sop
