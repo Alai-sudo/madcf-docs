@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ACP Unified SSE Review</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f7f7f4; color: #181816; }
+    main { max-width: 960px; margin: 0 auto; padding: 40px 24px 64px; }
+    a { color: #2357c6; }
+    header { margin-bottom: 24px; }
+    h1 { font-size: 28px; line-height: 1.2; margin: 0 0 8px; }
+    .meta { color: #66645f; font-size: 14px; }
+    pre { white-space: pre-wrap; word-break: break-word; background: #fff; border: 1px solid #dedbd2; border-radius: 10px; padding: 20px; line-height: 1.55; overflow-x: auto; }
+    nav { display: flex; gap: 14px; flex-wrap: wrap; margin: 20px 0 28px; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #151515; color: #f2f0e8; }
+      pre { background: #1f1f1f; border-color: #36342f; }
+      .meta { color: #aaa69c; }
+      a { color: #8ab4ff; }
+    }
+  </style>
+</head>
+<body>
+  <main><header><h1>ACP Unified SSE Review</h1><div class="meta">Source: <a href="review.md">review.md</a></div></header><nav><a href="index.html">Index</a><a href="design.html">ACP Unified SSE Design</a>
+<a href="test-report.html">ACP Unified SSE Test Report</a>
+<a href="test-summary.html">ACP Unified SSE Test Summary</a>
+<a href="review.html">ACP Unified SSE Review</a></nav><pre># Review
+
+## Findings
+
+No blocking findings in the local review pass.
+
+## Review Notes
+
+- The frontend deck page now imports `useDeckTimeline` only.
+- The old `useDeckEvents`, `useDeckChat`, and `useDeckActivity` hook files were removed.
+- ACP runtime events are preserved as ACP/system events (`runtime_event`) instead of being translated through Mosoo Driver vocabulary.
+- The old `/driver-event` route remains as compatibility, but the sandbox adapter posts to `/runtime-event`.
+- Legacy `message`, `activity`, `context`, and `turn` SSE broadcasts remain server-side for rollback and non-App callers.
+- The container runtime install now fails explicitly after repeated npm failures and verifies both runtime binaries during image build.
+
+## Residual Risk
+
+- `api.chatStream` still exists as a legacy fallback, but the current App path does not use it while `useStreamArch` is `true`.
+- The timeline endpoint is still synthesized from existing message/activity rows rather than backed by a dedicated monotonic table.
+- Production smoke is still required to verify Cloudflare container image build and ACP runtime behavior.
+- Current deployment is blocked on this arm64 host because Wrangler builds a linux/amd64 container and npm install under qemu repeatedly hits `ECONNRESET`.
+</pre></main>
+</body>
+</html>

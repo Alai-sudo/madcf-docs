@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ACP Unified SSE Test Summary</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f7f7f4; color: #181816; }
+    main { max-width: 960px; margin: 0 auto; padding: 40px 24px 64px; }
+    a { color: #2357c6; }
+    header { margin-bottom: 24px; }
+    h1 { font-size: 28px; line-height: 1.2; margin: 0 0 8px; }
+    .meta { color: #66645f; font-size: 14px; }
+    pre { white-space: pre-wrap; word-break: break-word; background: #fff; border: 1px solid #dedbd2; border-radius: 10px; padding: 20px; line-height: 1.55; overflow-x: auto; }
+    nav { display: flex; gap: 14px; flex-wrap: wrap; margin: 20px 0 28px; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #151515; color: #f2f0e8; }
+      pre { background: #1f1f1f; border-color: #36342f; }
+      .meta { color: #aaa69c; }
+      a { color: #8ab4ff; }
+    }
+  </style>
+</head>
+<body>
+  <main><header><h1>ACP Unified SSE Test Summary</h1><div class="meta">Source: <a href="test-summary.md">test-summary.md</a></div></header><nav><a href="index.html">Index</a><a href="design.html">ACP Unified SSE Design</a>
+<a href="test-report.html">ACP Unified SSE Test Report</a>
+<a href="test-summary.html">ACP Unified SSE Test Summary</a>
+<a href="review.html">ACP Unified SSE Review</a></nav><pre># Test Summary
+
+## Result
+
+- Total checks: 10
+- Passed: 8
+- Failed: 0
+- Blocked: 1
+- Interrupted: 1
+- Skipped: 0
+
+## Passed
+
+- Dependency install with `npm ci`.
+- ACP adapter JavaScript syntax check.
+- API and web TypeScript checks.
+- Workspace test command.
+- API and web production build.
+- `git diff --check`.
+- Source inspection for unified App-level SSE usage.
+- Post-Dockerfile-fix `git diff --check` and TypeScript checks.
+
+## Interrupted
+
+- First deployment attempt was interrupted after the container npm install layer hit `ECONNRESET` under qemu. Investigation found and fixed a Dockerfile retry-loop bug that could otherwise hide repeated npm failures.
+
+## Blocked
+
+- Second deployment attempt confirmed the same qemu npm failure pattern on `@agentclientprotocol/claude-agent-acp`. The host can reach the npm tarball directly, but the amd64 container build under qemu fails after a long CPU-bound install. Deployment should continue from an amd64 builder or a prebuilt amd64 container image path.
+
+## Notes
+
+- npm audit findings pre-exist this patch: 8 moderate, 1 critical.
+- Vite large chunk warnings pre-exist this patch.
+- Browser and production deployment smoke results will be added after deploy.
+</pre></main>
+</body>
+</html>

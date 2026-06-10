@@ -1,0 +1,165 @@
+# Test Report
+
+Commands run:
+
+1. `npm ci`
+
+Result: PASS
+
+Notes:
+
+- Installed 394 packages.
+- npm audit reported existing findings: 8 moderate, 1 critical.
+
+2. `node --check containers/oasis/pp-cli/lib/adapters/acp.mjs`
+
+Result: PASS
+
+3. `npm run typecheck --workspaces --if-present`
+
+Result: PASS
+
+Output:
+
+```text
+> @pp/api@0.0.0 typecheck
+> tsc --noEmit
+
+> @pp/web@0.0.0 typecheck
+> tsc --noEmit
+```
+
+4. `npm test --workspaces --if-present`
+
+Result: PASS
+
+Notes:
+
+- Workspace test scripts exited 0 with no output.
+
+5. `npm run build --workspaces --if-present`
+
+Result: PASS
+
+Output summary:
+
+```text
+> @pp/api@0.0.0 build
+> echo 'wrangler bundles via main entry - no separate build step'
+
+> @pp/web@0.0.0 build
+> vite build
+
+vite v7.3.3 building client environment for production...
+6356 modules transformed.
+dist/assets/index-BOXgn7sF.js      2,592.52 kB | gzip: 729.95 kB
+dist/assets/domToPptx.js           1,805.86 kB | gzip: 565.19 kB
+```
+
+Notes:
+
+- Vite reported existing large chunk warnings.
+
+6. `git diff --check`
+
+Result: PASS
+
+7. Source inspection
+
+Command:
+
+```text
+rg "useDeckEvents|useDeckChat|useDeckActivity|new EventSource" apps/web/src -n
+```
+
+Result: PASS
+
+Notes:
+
+- `App.tsx` imports and uses only `useDeckTimeline`.
+- The deleted legacy hook files no longer exist.
+- The active deck page subscription path is `useDeckTimeline`.
+- `api/client.ts` still contains legacy `chatStream` fallback code, but the current `App.tsx` path uses `sendMessageOnly` plus the unified timeline subscription because `useStreamArch` is `true`.
+
+8. First deployment attempt
+
+Command:
+
+```text
+./scripts/deploy.sh
+```
+
+Result: INTERRUPTED
+
+Observed output:
+
+```text
+npm error code ECONNRESET
+npm error network Client network socket disconnected before secure TLS connection was established
+agent runtime npm install attempt 1 failed; retrying in 10s...
+```
+
+Diagnosis:
+
+- Wrangler builds the container as `linux/amd64` on this `arm64` host, so npm runs through `qemu-x86_64`.
+- The npm install process was still CPU-active, not deadlocked.
+- The Dockerfile retry loop had a correctness bug: if all five npm attempts failed, the shell loop could exit successfully because the final command was `sleep`. That could produce a container image missing the agent runtime.
+
+Fix applied:
+
+- Split `@anthropic-ai/claude-code` and `@agentclientprotocol/claude-agent-acp` into separate install layers.
+- Added explicit `exit 1` after five failed attempts.
+- Added `claude --version` and `claude-agent-acp --cli --version` build-time verification.
+- Added npm fetch timeout/retry maximums.
+
+9. Post-Dockerfile-fix check
+
+Commands:
+
+```text
+git diff --check
+npm run typecheck --workspaces --if-present
+```
+
+Result: PASS
+
+10. Second deployment attempt
+
+Command:
+
+```text
+./scripts/deploy.sh
+```
+
+Result: BLOCKED BY LOCAL CONTAINER BUILD
+
+Observed output:
+
+```text
+#8 added 2 packages in 5m
+#8 2.1.148 (Claude Code)
+#9 npm error code ECONNRESET
+#9 npm error network Client network socket disconnected before secure TLS connection was established
+#9 claude-agent-acp npm install attempt 1 failed; retrying in 10s...
+```
+
+Additional checks:
+
+```text
+ps -eo pid,ppid,pcpu,pmem,etime,cmd | rg "claude-agent-acp|npm install -g|qemu-x86_64"
+curl -I --max-time 20 https://registry.npmjs.org/@agentclientprotocol/claude-agent-acp/-/claude-agent-acp-0.43.0.tgz
+```
+
+Findings:
+
+- The host is `linux/arm64`.
+- Wrangler/Docker builds the Cloudflare container as `linux/amd64`.
+- The npm install process runs under `/usr/bin/qemu-x86_64`.
+- The qemu npm process remained CPU-active for about 18 minutes, then hit `ECONNRESET`.
+- Host-level `curl` to the same npm tarball returned HTTP 200 immediately, so the machine's outbound network was not generally down.
+- Cloudflare Containers currently require images that can run on `linux/amd64`, so an ARM-only production image is not a valid target.
+
+Conclusion:
+
+- Deployment is blocked by the local cross-architecture container build path, not by the ACP/SSE code changes.
+- The right fix is to build the Cloudflare container on an amd64 builder or prebuild/cache an amd64 image. Continuing qemu npm retries on this host is slow and unreliable.
