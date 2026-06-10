@@ -8,6 +8,8 @@ container image is built on a native `linux/amd64` runner instead of via QEMU.
 ## Approach
 
 - Add a GitHub Actions workflow that deploys automatically when `main` changes.
+- Add `dev` as the integration deployment branch for feature-branch
+  validation before merging to `main`.
 - Keep `workflow_dispatch` as an operator fallback for manual redeploys.
 - Run on `ubuntu-latest`, which provides an amd64 Linux runner.
 - Keep `wrangler.toml` free of account-specific IDs.
@@ -17,7 +19,11 @@ container image is built on a native `linux/amd64` runner instead of via QEMU.
   - `scripts/deploy.sh` for Wrangler deploy.
   - `scripts/bootstrap-talents.mjs` for system talent sync.
 - Run D1 migrations and system talent sync by default on `main` deploys.
+- Run D1 migrations and system talent sync by default on `dev` deploys.
 - Let manual redeploys choose whether to run migrations and talent sync.
+- Print the deployed branch and commit SHA at the start of every deploy.
+- Skip non-manifest talent directories during bootstrap so newer `talent.toml`
+  directories do not fail manifest-based sync.
 
 ## Required GitHub Configuration
 
@@ -38,6 +44,8 @@ In scope:
 
 - Add `.github/workflows/deploy.yml`.
 - Trigger deployment on `push` to `main` and on manual `workflow_dispatch`.
+- Trigger deployment on `push` to `dev`.
+- Update `scripts/bootstrap-talents.mjs` to skip missing-manifest directories.
 - Document this deployment path.
 
 Out of scope:
@@ -51,5 +59,6 @@ Out of scope:
 
 - Validate the workflow YAML is syntactically loadable.
 - Verify push-trigger and manual-trigger condition expressions.
+- Run the talent bootstrap dry-run.
 - Run local typecheck and build.
 - Confirm no account-specific secrets are committed.

@@ -11,6 +11,7 @@ Output:
 ```text
 yaml ok
 trigger: push main
+trigger: push dev
 trigger: workflow_dispatch
 run step: Install dependencies
 run step: Check Docker builder
@@ -99,6 +100,16 @@ Result: PASS
 Notes:
 
 - The workflow now runs on `push` to `main`.
+- The workflow now runs on `push` to `dev`.
 - `workflow_dispatch` remains available for manual redeploys.
 - Migration and talent sync steps run on push events and remain configurable
   for manual dispatch events.
+
+9. `node scripts/bootstrap-talents.mjs --dry-run`
+
+Result: PASS
+
+Notes:
+
+- Manifest-based talent directories are listed.
+- Missing-manifest directories are skipped instead of failing the bootstrap.
