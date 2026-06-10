@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Local-Only Audit</title><style>body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f7f7f4;color:#181816}main{max-width:1120px;margin:0 auto;padding:40px 24px 64px}a{color:#2357c6}h1{font-size:28px;line-height:1.2;margin:0 0 8px}.meta{color:#66645f;font-size:14px}pre{white-space:pre-wrap;word-break:break-word;background:#fff;border:1px solid #dedbd2;border-radius:10px;padding:20px;line-height:1.55;overflow-x:auto}nav{display:flex;gap:14px;flex-wrap:wrap;margin:20px 0 28px}@media(prefers-color-scheme:dark){body{background:#151515;color:#f2f0e8}pre{background:#1f1f1f;border-color:#36342f}.meta{color:#aaa69c}a{color:#8ab4ff}}</style></head><body><main><header><h1>Local-Only Audit</h1><div class="meta">Source: <a href="local-only-audit.md">local-only-audit.md</a></div></header><nav><a href="index.html">Index</a><a href="design.html">Design</a>
+<a href="audit.html">Full Branch Audit</a>
+<a href="local-only-audit.html">Local-Only Audit</a>
+<a href="patch-equivalence.html">Patch Equivalence</a>
+<a href="branch-audit.html">Raw TSV</a>
+<a href="worktrees.html">Worktrees</a></nav><pre>---
+title: Local-Only Branch Risk Audit
+date: 2026-06-10
+---
+
+# Local-Only Branch Risk Audit
+
+This report filters the full branch inventory down to local state that is not safely represented by an existing remote branch. Baseline: `origin/dev` at `e57e5ff`. Post-cleanup snapshot.
+
+## Summary
+
+- Dirty worktrees: 6
+- Local risk branches: 29
+- `origin/main` is ancestor of `origin/dev`: true
+- `origin/feat/acp-unified-sse` is ancestor of `origin/dev`: true
+
+## Local Risk Branches
+
+| Risk | Branch | Ahead upstream | Ahead dev | Behind dev | Upstream | Worktree | Subject |
+|---|---|---:|---:|---:|---|---|---|
+| dirty | `ab/standard-4-cpu` | 0 | 1 | 123 | `origin/ab/standard-4-cpu` | `pitchpilot-cf-ab-cpu` | perf(sandbox): bump container to standard-4 (4 vCPU + 12 GiB) for v2 PPTX builds |
+| dirty | `docs/collaboration-sop` | 0 | 0 | 79 | `origin/main` | `pitchpilot-cf-collab-sop` | fix(sse): route agent context_updated to the context channel (panel auto-refresh) (#153) |
+| dirty | `feat/dom-pptx-skills` | 0 | 18 | 79 | `origin/feat/dom-pptx-skills` | `pitchpilot-cf-dom-pptx-skills` | docs: record export progress deploy verification |
+| dirty | `fix/restore-oasis-container` | 0 | 0 | 50 | `origin/fix/preview-load-speed` | `pitchpilot-cf-preview-perf` | test: record visual pptx deployment smoke |
+| dirty | `main` | 0 | 0 | 79 | `origin/main` | `pitchpilot-cf` | fix(sse): route agent context_updated to the context channel (panel auto-refresh) (#153) |
+| dirty | `refactor/revert-to-claude-code-sandbox` | 0 | 0 | 64 | `origin/refactor/revert-to-claude-code-sandbox` | `pitchpilot-cf-revert-sandbox` | test: record agent runtime production smoke |
+| upstream-gone | `ci/auto-deploy-main` |  | 1 | 79 | `origin/ci/auto-deploy-main` (gone) |  | ci: deploy automatically from main |
+| upstream-gone | `dev/production-sync-2026-06-09` |  | 64 | 79 | `origin/dev/production-sync-2026-06-09` (gone) | `pitchpilot-cf-dev-sync` | chore: support toml talent bootstrap |
+| upstream-gone | `docs/inventory-update` |  | 1 | 164 | `origin/docs/inventory-update` (gone) | `pitchpilot-cf-deploy` | docs: update alignment inventory with PR #82-#86 |
+| upstream-gone | `feat/activity-pagination` |  | 2 | 292 | `origin/feat/activity-pagination` (gone) | `pitchpilot-cf-activity` | docs: activity pagination test summary |
+| upstream-gone | `feat/admin-gating-deck-members-ui` |  | 3 | 291 | `origin/feat/admin-gating-deck-members-ui` (gone) | `pitchpilot-cf-final-gaps` | docs: admin gating + deck-members API + hotfix test summary |
+| upstream-gone | `feat/admin-routes-2` |  | 2 | 293 | `origin/feat/admin-routes-2` (gone) | `pitchpilot-cf-admin-routes` | docs: admin routes test summary |
+| no-upstream | `feat/author-svg-worker-native` |  | 10 | 79 | _none_ | `pitchpilot-cf-author-svg` | fix(web): workspace preview thumbnails — use /versions, render via deck-group |
+| upstream-gone | `feat/context-files-in-prompt` |  | 2 | 289 | `origin/feat/context-files-in-prompt` (gone) | `pitchpilot-cf-context-prompt` | docs: memory-in-prompt test summary |
+| upstream-gone | `feat/deck-members` |  | 2 | 294 | `origin/feat/deck-members` (gone) | `pitchpilot-cf-deck-members` | docs: deck-members test summary |
+| upstream-gone | `feat/import-into-context` |  | 2 | 288 | `origin/feat/import-into-context` (gone) | `pitchpilot-cf-import-context` | feat(talents): PP-convention wrappers for source converters |
+| upstream-gone | `feat/members-toolbar` |  | 3 | 290 | `origin/feat/members-toolbar` (gone) | `pitchpilot-cf-members-ui` | docs: members toolbar test summary |
+| upstream-gone | `feat/ppt-master-talents` |  | 5 | 296 | `origin/feat/ppt-master-talents` (gone) |  | docs: ppt-master + brand-design test summary |
+| no-upstream | `feat/svg-to-pptx-p1` |  | 5 | 79 | _none_ | `pitchpilot-cf-svgpptx-p1` | feat(svg-pptx): P1.5 — wire /export.pptx to render SVG decks via the converter |
+| upstream-gone | `feat/tulpa-bind-ppt-master` |  | 3 | 295 | `origin/feat/tulpa-bind-ppt-master` (gone) | `pitchpilot-cf-tulpa-binding` | docs: tulpa-binding test summary |
+| upstream-gone | `feat/tulpa-talents-sandbox` |  | 10 | 297 | `origin/feat/tulpa-talents-sandbox` (gone) |  | docs: refresh test summary with admin wsId fix + final worker version |
+| no-upstream | `feat/unified-deck-ir` |  | 1 | 103 | _none_ | `pitchpilot-cf-unified-ir` | docs(design): unified deck IR — one path, deterministic HTML+PPTX, round-trippable import (DRAFT) |
+| upstream-gone | `fix/bootstrap-skip-non-manifest` |  | 1 | 78 | `origin/fix/bootstrap-skip-non-manifest` (gone) |  | fix: skip non-manifest talent directories during bootstrap |
+| no-upstream | `fix/deck-output-assets` |  | 6 | 88 | _none_ | `pitchpilot-cf-deck-assets` | fix(talents): load 8 image talents (toml-&gt;json) + vendor Dify logo SVGs |
+| ahead-upstream | `feat/deck-create-perf` | 2 | 1 | 132 | `origin/feat/deck-create-perf` |  | feat(perf): skip 2 redundant roundtrips in deck-create-to-enter |
+| ahead-upstream | `feat/parity-knowledge-panels-frontend` | 15 | 1 | 235 | `origin/feat/parity-knowledge-panels-frontend` | `pitchpilot-cf-knowledge-fe` | Merge remote-tracking branch 'origin/main' into feat/parity-knowledge-panels-frontend |
+| ahead-upstream | `fix/panel-tab-stickiness` | 1 | 3 | 80 | `origin/fix/panel-tab-stickiness` | `pitchpilot-cf-panel-logic` | docs: review notes for panel-tab-stickiness |
+| ahead-upstream | `spike/svg-to-pptx` | 1 | 1 | 79 | `origin/main` | `pitchpilot-cf-pptx-spike` | spike(pptx): SVG-&gt;editable PPTX in the Worker (pure JS, no python/sandbox) |
+| no-upstream | `backup/revert-sandbox-before-dom-pptx` |  | 0 | 103 | _none_ |  | docs(inventory): snapshot 2026-06-05 past-week cherry-picks (#139-#153) |
+
+
+## Dirty Status Details
+
+### ab/standard-4-cpu
+
+Worktree: `/home/ubuntu/pitchpilot-cf-ab-cpu`
+
+```text
+?? apps/api/node_modules
+?? apps/web/node_modules
+?? node_modules
+```
+
+### docs/collaboration-sop
+
+Worktree: `/home/ubuntu/pitchpilot-cf-collab-sop`
+
+```text
+?? docs/iterations/2026-06-08-collaboration-sop/
+```
+
+### feat/dom-pptx-skills
+
+Worktree: `/home/ubuntu/pitchpilot-cf-dom-pptx-skills`
+
+```text
+?? docs/iterations/2026-06-08-dual-runner-modes/
+```
+
+### fix/restore-oasis-container
+
+Worktree: `/home/ubuntu/pitchpilot-cf-preview-perf`
+
+```text
+ M apps/api/src/agent/composePrompt.ts
+ M apps/api/src/router.ts
+ M apps/api/src/routes/admin.ts
+ M containers/oasis/Dockerfile
+```
+
+### main
+
+Worktree: `/home/ubuntu/pitchpilot-cf`
+
+```text
+?? artifacts/
+```
+
+### refactor/revert-to-claude-code-sandbox
+
+Worktree: `/home/ubuntu/pitchpilot-cf-revert-sandbox`
+
+```text
+?? docs/iterations/2026-06-04-revert-to-sandbox/
+?? docs/iterations/2026-06-08-responsive-html-slide-contract/
+```
+</pre></main></body></html>
