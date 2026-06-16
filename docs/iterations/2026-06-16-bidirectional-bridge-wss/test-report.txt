@@ -1,0 +1,95 @@
+$ node --check containers/oasis/pp-cli/bin/pp-agent-bridge.mjs && node --check containers/oasis/pp-cli/bin/pp-run-agent.mjs
+
+$ npm run typecheck --workspace=@pp/api
+
+> @pp/api@0.0.0 typecheck
+> tsc --noEmit
+
+$ npm run typecheck --workspace=@pp/web
+
+> @pp/web@0.0.0 typecheck
+> tsc --noEmit
+
+$ npx tsx --test apps/api/src/agent/runtimeCache.test.ts apps/api/src/durable/bridgeEvents.test.ts
+TAP version 13
+# Subtest: accepts a matching persistent stdio runtime cache
+ok 1 - accepts a matching persistent stdio runtime cache
+  ---
+  duration_ms: 1.619053
+  type: 'test'
+  ...
+# Subtest: still accepts a matching legacy persistent ACP runtime cache
+ok 2 - still accepts a matching legacy persistent ACP runtime cache
+  ---
+  duration_ms: 0.237324
+  type: 'test'
+  ...
+# Subtest: invalidates when deck configuration changed
+ok 3 - invalidates when deck configuration changed
+  ---
+  duration_ms: 1.008751
+  type: 'test'
+  ...
+# Subtest: ignores volatile deck timestamps when configuration is unchanged
+ok 4 - ignores volatile deck timestamps when configuration is unchanged
+  ---
+  duration_ms: 0.44616
+  type: 'test'
+  ...
+# Subtest: invalidates when cache TTL expires
+ok 5 - invalidates when cache TTL expires
+  ---
+  duration_ms: 0.197005
+  type: 'test'
+  ...
+# Subtest: invalidates when model changed
+ok 6 - invalidates when model changed
+  ---
+  duration_ms: 0.203536
+  type: 'test'
+  ...
+# Subtest: requires persistent runtime and an existing session
+ok 7 - requires persistent runtime and an existing session
+  ---
+  duration_ms: 0.435534
+  type: 'test'
+  ...
+# Subtest: accepts token only when beyond refresh skew
+ok 8 - accepts token only when beyond refresh skew
+  ---
+  duration_ms: 0.252643
+  type: 'test'
+  ...
+# Subtest: updates session without dropping cached token metadata
+ok 9 - updates session without dropping cached token metadata
+  ---
+  duration_ms: 0.96423
+  type: 'test'
+  ...
+# Subtest: normalizes runtime event websocket frames
+ok 10 - normalizes runtime event websocket frames
+  ---
+  duration_ms: 1.921066
+  type: 'test'
+  ...
+# Subtest: normalizes tool event websocket frames
+ok 11 - normalizes tool event websocket frames
+  ---
+  duration_ms: 0.362567
+  type: 'test'
+  ...
+# Subtest: rejects invalid websocket frames
+ok 12 - rejects invalid websocket frames
+  ---
+  duration_ms: 0.258034
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 596.223666

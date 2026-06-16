@@ -10,7 +10,7 @@ flowchart TB
     classDef runtime fill:#241b3a,stroke:#a78bfa,stroke-width:1px,color:#ede9fe
     classDef external fill:#2f1d12,stroke:#fb923c,stroke-width:1px,color:#ffedd5
 
-    Browser["Browser — React 19 / Vite SPA<br/>Workspace · DeckDashboard · ChatPanel<br/>Preview iframe · export controls<br/>Timeline via SSE"]:::ui
+    Browser["Browser — React 19 / Vite SPA<br/>Workspace · DeckDashboard · ChatPanel<br/>Preview iframe · export controls<br/>Deck live WSS + SSE fallback"]:::ui
 
     subgraph WORKER["pitchpilot-api — single Cloudflare Worker (TypeScript)"]
         direction TB
@@ -23,15 +23,15 @@ flowchart TB
 
     subgraph DUR["Durable Objects"]
         direction TB
-        DeckDO{{"DeckDO — per deck coordinator<br/>DO-local SQLite: messages · activity · turn_state<br/>timeline fanout · watchdog · runtime cache<br/>claude_session pointers · deck-scoped token minting"}}:::runtime
-        AgentSandbox{{"AgentSandbox DO — per deck sandbox controller<br/>bootWorkspace · ensurePersistentAgent<br/>bridge IPC proxy · abort/recycle"}}:::runtime
-        DeckDO -- "boot / warmup / prompt / interrupt<br/>DO RPC + local bridge IPC" --> AgentSandbox
+        DeckDO{{"DeckDO — per deck hot-path relay<br/>queue · watchdog · timeline fanout<br/>runtime cache · session pointers<br/>side-effect persistence to DO SQLite/D1"}}:::runtime
+        AgentSandbox{{"AgentSandbox DO — sandbox lifecycle only<br/>bootWorkspace · ensurePersistentAgent<br/>prepare prompt files · abort/recycle"}}:::runtime
+        DeckDO -- "bootstrap / prepare workspace<br/>DO RPC, not token streaming" --> AgentSandbox
     end
 
     subgraph SANDBOX["Cloudflare Sandbox container"]
         direction TB
         Workspace["/work/deck-&lt;deckId&gt;<br/>CLAUDE.md · persona.md<br/>skills/ · inbox/ · artifacts/ · memory/ · context/"]:::runtime
-        Bridge["pp-agent-bridge.mjs — resident stdio bridge<br/>HTTP control: /status /warmup /prompt /cancel /shutdown<br/>event WS client + HTTP fallback"]:::runtime
+        Bridge["pp-agent-bridge.mjs — resident stdio bridge<br/>bidirectional WSS client<br/>prompt · cancel · delta · finalize · runtime/tool events"]:::runtime
         Claude["Claude Code CLI<br/>claude -p --input-format stream-json<br/>--output-format stream-json --include-partial-messages<br/>persistent-stdio runtime · --resume session_id"]:::external
         Workspace --> Bridge
         Bridge -- "JSONL user messages over stdin" --> Claude
@@ -46,8 +46,8 @@ flowchart TB
 
     Anthropic["Anthropic API<br/>latest Sonnet by default<br/>web search enabled by Claude Code tooling"]:::external
 
-    Browser -- "POST /api/decks/:id/send" --> Router
-    Browser -- "GET /api/decks/:id/events (SSE)" --> Router
+    Browser <-- "WSS /api/decks/:id/live-ws<br/>send · interrupt · timeline · context" --> Router
+    Browser -. "fallback POST /send + GET /events (SSE)" .-> Router
     Browser -- "GET /deck/:id/preview · /export/*" --> Router
     AppRoutes -- "route deck operations" --> DeckDO
     AppRoutes --> D1
@@ -55,12 +55,12 @@ flowchart TB
 
     DeckDO -- "start/reuse sandbox" --> AgentSandbox
     AgentSandbox -- "container commands" --> Workspace
-    Bridge -- "runtime/tool events<br/>WebSocket: /agent-events-ws" --> InternalRoutes
-    Bridge -- "message deltas + finalize<br/>HTTP internal endpoints" --> InternalRoutes
-    InternalRoutes -- "normalize · persist · fanout" --> DeckDO
+    DeckDO <-- "bidirectional WSS<br/>bridge_command · command_result<br/>stream_delta · turn_finalize<br/>runtime_event · tool_event" --> Bridge
+    InternalRoutes -- "authenticated WS upgrade<br/>/agent-events-ws" --> DeckDO
+    DeckDO -. "side-effect persistence<br/>DO SQLite + D1 progress" .-> STORE
     Bridge -- "scan artifacts/memory/context<br/>mirror changed outputs" --> R2
-    DeckDO -- "SSE timeline: user message · thinking<br/>message_delta · activity · done/error<br/>artifact/version updates" --> Browser
+    DeckDO -- "live WSS fanout<br/>user message · thinking · message_delta<br/>activity · done/error · artifact updates" --> Browser
     Claude -- "model calls" --> Anthropic
 
-    DeckDO -. "authoritative queue + watchdog boundary" .- AgentSandbox
+    DeckDO -. "hot-path relay; persistence is a side effect" .- AgentSandbox
     WORKER -. "Standalone: no arx / arx-cf runtime dependency" .- STORE

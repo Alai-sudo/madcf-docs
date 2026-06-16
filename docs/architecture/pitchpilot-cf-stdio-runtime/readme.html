@@ -3,10 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PitchPilot CF Architecture Notes</title>
-  <style>body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f7f7f4;color:#181816}main{max-width:1080px;margin:0 auto;padding:40px 24px 64px}a{color:#2357c6}h1{font-size:28px;line-height:1.2;margin:0 0 8px}.meta{color:#66645f;font-size:14px}pre{white-space:pre-wrap;word-break:break-word;background:#fff;border:1px solid #dedbd2;border-radius:10px;padding:20px;line-height:1.55;overflow-x:auto}nav{display:flex;gap:14px;flex-wrap:wrap;margin:20px 0 28px}@media(prefers-color-scheme:dark){body{background:#151515;color:#f2f0e8}pre{background:#1f1f1f;border-color:#36342f}.meta{color:#aaa69c}a{color:#8ab4ff}}</style>
+  <title>Architecture README</title>
+  <style>body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f7f7f4;color:#181816}main{max-width:960px;margin:0 auto;padding:40px 24px 64px}a{color:#2357c6}h1{font-size:28px;line-height:1.2;margin:0 0 8px}.meta{color:#66645f;font-size:14px}pre{white-space:pre-wrap;word-break:break-word;background:#fff;border:1px solid #dedbd2;border-radius:10px;padding:20px;line-height:1.55;overflow-x:auto}nav{display:flex;gap:14px;flex-wrap:wrap;margin:20px 0 28px}@media(prefers-color-scheme:dark){body{background:#151515;color:#f2f0e8}pre{background:#1f1f1f;border-color:#36342f}.meta{color:#aaa69c}a{color:#8ab4ff}}</style>
 </head>
-<body><main><header><h1>PitchPilot CF Architecture Notes</h1><div class="meta">Source: <a href="README.md">README.md</a></div></header><nav><a href="index.html">Index</a><a href="readme.html">Architecture Notes</a><a href="pp-cf.html">Mermaid Source</a><a href="pp-cf.mmd">Raw .mmd</a></nav><pre># Live architecture diagram
+<body><main><header><h1>Architecture README</h1></header><nav><a href="index.html">Index</a>
+<a href="README.html">Architecture README</a>
+<a href="pp-cf.html">Mermaid Diagram Source</a></nav><div class="meta">Source: <a href="README.md">README.md</a></div><pre># Live architecture diagram
 
 `pp-cf.mmd` is the **single source of truth** for the pitchpilot-cf box on the
 live architecture site:
@@ -34,9 +36,9 @@ Hot path:
 
 ```text
 Browser
-  -&gt; Worker route
-  -&gt; DeckDO
-  -&gt; AgentSandbox DO
+  -&gt; Worker route (WebSocket upgrade)
+  -&gt; DeckDO live websocket relay
+  -&gt; bridge WebSocket command
   -&gt; pp-agent-bridge.mjs
   -&gt; claude -p --input-format stream-json --output-format stream-json
 ```
@@ -46,14 +48,17 @@ Return path:
 ```text
 Claude stream-json stdout
   -&gt; pp-agent-bridge.mjs
-  -&gt; runtime/tool events over bridge WebSocket
-  -&gt; stream deltas and turn finalization over internal HTTP endpoints
-  -&gt; DeckDO timeline fanout
-  -&gt; Browser SSE
+  -&gt; bridge WebSocket frames
+  -&gt; DeckDO live websocket fanout
+  -&gt; Browser
 ```
 
 DeckDO is still the authoritative per-deck coordination point for queueing,
-watchdog supervision, timeline fanout, and session/runtime cache metadata.
+watchdog supervision, timeline fanout, and session/runtime cache metadata, but
+the transport path treats persistence as a side effect. Runtime/tool events are
+deferred before SQLite persistence, and token deltas fan out before local
+message-content persistence. HTTP send and SSE remain compatibility fallbacks,
+not the primary chat transport.
 
 ## The rule
 

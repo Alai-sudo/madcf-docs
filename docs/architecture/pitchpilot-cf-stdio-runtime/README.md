@@ -26,9 +26,9 @@ Hot path:
 
 ```text
 Browser
-  -> Worker route
-  -> DeckDO
-  -> AgentSandbox DO
+  -> Worker route (WebSocket upgrade)
+  -> DeckDO live websocket relay
+  -> bridge WebSocket command
   -> pp-agent-bridge.mjs
   -> claude -p --input-format stream-json --output-format stream-json
 ```
@@ -38,14 +38,17 @@ Return path:
 ```text
 Claude stream-json stdout
   -> pp-agent-bridge.mjs
-  -> runtime/tool events over bridge WebSocket
-  -> stream deltas and turn finalization over internal HTTP endpoints
-  -> DeckDO timeline fanout
-  -> Browser SSE
+  -> bridge WebSocket frames
+  -> DeckDO live websocket fanout
+  -> Browser
 ```
 
 DeckDO is still the authoritative per-deck coordination point for queueing,
-watchdog supervision, timeline fanout, and session/runtime cache metadata.
+watchdog supervision, timeline fanout, and session/runtime cache metadata, but
+the transport path treats persistence as a side effect. Runtime/tool events are
+deferred before SQLite persistence, and token deltas fan out before local
+message-content persistence. HTTP send and SSE remain compatibility fallbacks,
+not the primary chat transport.
 
 ## The rule
 

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bidirectional Bridge WSS Test Summary</title>
+  <style>body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f7f7f4;color:#181816}main{max-width:960px;margin:0 auto;padding:40px 24px 64px}a{color:#2357c6}h1{font-size:28px;line-height:1.2;margin:0 0 8px}.meta{color:#66645f;font-size:14px}pre{white-space:pre-wrap;word-break:break-word;background:#fff;border:1px solid #dedbd2;border-radius:10px;padding:20px;line-height:1.55;overflow-x:auto}nav{display:flex;gap:14px;flex-wrap:wrap;margin:20px 0 28px}@media(prefers-color-scheme:dark){body{background:#151515;color:#f2f0e8}pre{background:#1f1f1f;border-color:#36342f}.meta{color:#aaa69c}a{color:#8ab4ff}}</style>
+</head>
+<body><main><header><h1>Bidirectional Bridge WSS Test Summary</h1></header><nav><a href="index.html">Index</a>
+<a href="design.html">Bidirectional Bridge WSS Design</a>
+<a href="test-report.html">Bidirectional Bridge WSS Test Report</a>
+<a href="test-summary.html">Bidirectional Bridge WSS Test Summary</a>
+<a href="review.html">Bidirectional Bridge WSS Review</a></nav><div class="meta">Source: <a href="test-summary.md">test-summary.md</a></div><pre># Test Summary
+
+## Commands
+
+- `node --check containers/oasis/pp-cli/bin/pp-agent-bridge.mjs &amp;&amp; node --check containers/oasis/pp-cli/bin/pp-run-agent.mjs`
+- `npm run typecheck --workspace=@pp/api`
+- `npm run typecheck --workspace=@pp/web`
+- `npx tsx --test apps/api/src/agent/runtimeCache.test.ts apps/api/src/durable/bridgeEvents.test.ts`
+
+## Results
+
+- Total tests: 12
+- Passed: 12
+- Failed: 0
+- Skipped: 0
+
+## Notes
+
+- Bridge JavaScript syntax checks passed.
+- API TypeScript typecheck passed.
+- Web TypeScript typecheck passed.
+- Runtime cache and bridge event normalization tests passed.
+- Browser and deployed sandbox smoke tests were not run in this iteration.
+</pre></main></body>
+</html>

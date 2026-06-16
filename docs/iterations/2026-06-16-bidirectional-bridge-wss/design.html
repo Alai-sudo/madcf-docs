@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bidirectional Bridge WSS Design</title>
+  <style>body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f7f7f4;color:#181816}main{max-width:960px;margin:0 auto;padding:40px 24px 64px}a{color:#2357c6}h1{font-size:28px;line-height:1.2;margin:0 0 8px}.meta{color:#66645f;font-size:14px}pre{white-space:pre-wrap;word-break:break-word;background:#fff;border:1px solid #dedbd2;border-radius:10px;padding:20px;line-height:1.55;overflow-x:auto}nav{display:flex;gap:14px;flex-wrap:wrap;margin:20px 0 28px}@media(prefers-color-scheme:dark){body{background:#151515;color:#f2f0e8}pre{background:#1f1f1f;border-color:#36342f}.meta{color:#aaa69c}a{color:#8ab4ff}}</style>
+</head>
+<body><main><header><h1>Bidirectional Bridge WSS Design</h1></header><nav><a href="index.html">Index</a>
+<a href="design.html">Bidirectional Bridge WSS Design</a>
+<a href="test-report.html">Bidirectional Bridge WSS Test Report</a>
+<a href="test-summary.html">Bidirectional Bridge WSS Test Summary</a>
+<a href="review.html">Bidirectional Bridge WSS Review</a></nav><div class="meta">Source: <a href="design.md">design.md</a></div><pre># Bidirectional Bridge WSS Hot Path
+
+## Goal
+
+Move the browser-to-agent transport to bidirectional WebSockets so browser-visible agent traffic is no longer gated by per-event HTTP callbacks.
+
+Principle: the browser-to-agent path should be as direct as the current Cloudflare topology allows. DeckDO remains the relay, queue, watchdog, and fanout boundary, but persistence is a side effect of the hot path instead of the hot path itself.
+
+## Target Flow
+
+User prompt:
+
+```text
+Browser
+  -&gt; Worker route (WebSocket upgrade)
+  -&gt; DeckDO live websocket relay
+  -&gt; bridge WebSocket command
+  -&gt; pp-agent-bridge.mjs
+  -&gt; Claude Code stdin
+```
+
+Agent output:
+
+```text
+Claude Code stdout
+  -&gt; pp-agent-bridge.mjs
+  -&gt; bridge WebSocket frames
+  -&gt; DeckDO immediate websocket fanout
+  -&gt; Browser
+```
+
+Bridge WebSocket frames:
+
+- `bridge_ready`
+- `bridge_command`
+- `command_result`
+- `stream_delta`
+- `turn_finalize`
+- `runtime_event`
+- `tool_event`
+
+Browser live WebSocket frames:
+
+- `deck_command`
+- `command_result`
+- `timeline`
+- `context`
+- `connected`
+
+## Scope
+
+Included:
+
+- Make `/agent-events-ws` bidirectional.
+- Add `/live-ws` as the browser deck channel for send, interrupt, timeline, and context events.
+- Prefer `/live-ws` in the frontend and keep HTTP/SSE fallback.
+- Store the active bridge socket in DeckDO.
+- Send `prompt`, `warmup`, and `cancel` commands from DeckDO to the bridge over WSS.
+- Send `stream_delta` and `turn_finalize` from bridge to DeckDO over WSS.
+- Keep internal HTTP endpoints as compatibility fallback when the socket is unavailable.
+- Fan out stream deltas before local message-content persistence.
+- Keep runtime/tool event persistence deferred.
+- Update live architecture docs.
+
+Not included:
+
+- Removing legacy ACP compatibility paths.
+- Removing internal HTTP fallback endpoints.
+- Deploy smoke test.
+
+## Persistence Rule
+
+DeckDO remains the authoritative place to project the timeline and supervise turns, but write operations are not the transport gate:
+
+- Runtime/tool events already enqueue deferred persistence before SQLite writes.
+- Message deltas now publish to browser listeners before appending to DO SQLite.
+- Turn finalization still performs required state transitions synchronously because it closes the turn and updates session pointers.
+
+## Test Plan
+
+- JavaScript syntax check for bridge and runner.
+- API TypeScript typecheck.
+- Runtime cache tests.
+- Bridge event normalization tests.
+</pre></main></body>
+</html>
