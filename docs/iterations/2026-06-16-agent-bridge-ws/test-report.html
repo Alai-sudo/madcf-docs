@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PitchPilot Agent Bridge WebSocket Test Report</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.55;
+      }
+      body {
+        margin: 0;
+        background: #0f1117;
+        color: #eceff4;
+      }
+      main {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 48px 24px 72px;
+      }
+      h1, h2 {
+        line-height: 1.2;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 32px;
+      }
+      h2 {
+        margin-top: 32px;
+        font-size: 20px;
+      }
+      .meta {
+        color: #a8b0bf;
+        margin-bottom: 32px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+      }
+      .card {
+        border: 1px solid #2c3340;
+        border-radius: 8px;
+        padding: 16px;
+        background: #171b24;
+      }
+      .label {
+        color: #a8b0bf;
+        font-size: 13px;
+      }
+      .value {
+        margin-top: 4px;
+        font-size: 22px;
+        font-weight: 650;
+      }
+      code {
+        background: #202633;
+        border-radius: 5px;
+        padding: 2px 5px;
+      }
+      pre {
+        overflow: auto;
+        background: #171b24;
+        border: 1px solid #2c3340;
+        border-radius: 8px;
+        padding: 16px;
+      }
+      li {
+        margin: 6px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>PitchPilot Agent Bridge WebSocket Test Report</h1>
+      <div class="meta">Generated on 2026-06-16 for <code>feat/agent-bridge-ws</code>.</div>
+
+      <h2>Deployment</h2>
+      <ul>
+        <li>Worker version: <code>945693e7-9fbe-4d69-a2c4-f47d39bd91fc</code></li>
+        <li>Sandbox image: <code>pitchpilot-api-agentsandbox:agent-ws-20260616b</code></li>
+        <li>Feature branch commit: <code>8d93e29</code></li>
+        <li>Target branch updated: <code>dev</code></li>
+      </ul>
+
+      <h2>Production Smoke</h2>
+      <div class="grid">
+        <div class="card">
+          <div class="label">Deck</div>
+          <div class="value">01KV7A7SCJ6YQKA6NHQMPYNWA8</div>
+        </div>
+        <div class="card">
+          <div class="label">Cold bridge rows</div>
+          <div class="value">20</div>
+        </div>
+        <div class="card">
+          <div class="label">Warm bridge rows</div>
+          <div class="value">14</div>
+        </div>
+        <div class="card">
+          <div class="label">Warm persistence lag</div>
+          <div class="value">6ms avg</div>
+        </div>
+      </div>
+
+      <h2>Result</h2>
+      <ul>
+        <li>Production health checks passed on <code>pp.langgenius.app</code> and <code>pitchpilot-api.langgenius-opc.workers.dev</code>.</li>
+        <li>Runtime events in the new sandbox were tagged with <code>_transport: "bridge_ws"</code>.</li>
+        <li>Warm turn timeline persistence lag averaged 6ms and peaked at 54ms across 113 samples.</li>
+        <li>No bridge WebSocket diagnostic failures were observed during the smoke test.</li>
+      </ul>
+
+      <h2>Checks</h2>
+      <pre><code>npm run typecheck --workspaces --if-present
+npx tsx --test apps/api/src/durable/bridgeEvents.test.ts apps/api/src/durable/activityBuffer.test.ts apps/api/src/agent/runtimeCache.test.ts apps/web/src/agentTimeline/viewModel.test.ts
+node --check containers/oasis/pp-cli/bin/pp-agent-bridge.mjs</code></pre>
+    </main>
+  </body>
+</html>
