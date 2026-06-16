@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PitchPilot CF Mermaid Architecture</title>
+  <style>body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f7f7f4;color:#181816}main{max-width:1080px;margin:0 auto;padding:40px 24px 64px}a{color:#2357c6}h1{font-size:28px;line-height:1.2;margin:0 0 8px}.meta{color:#66645f;font-size:14px}pre{white-space:pre-wrap;word-break:break-word;background:#fff;border:1px solid #dedbd2;border-radius:10px;padding:20px;line-height:1.55;overflow-x:auto}nav{display:flex;gap:14px;flex-wrap:wrap;margin:20px 0 28px}@media(prefers-color-scheme:dark){body{background:#151515;color:#f2f0e8}pre{background:#1f1f1f;border-color:#36342f}.meta{color:#aaa69c}a{color:#8ab4ff}}</style>
+</head>
+<body><main><header><h1>PitchPilot CF Mermaid Architecture</h1><div class="meta">Source: <a href="pp-cf.mmd">pp-cf.mmd</a></div></header><nav><a href="index.html">Index</a><a href="readme.html">Architecture Notes</a><a href="pp-cf.html">Mermaid Source</a><a href="pp-cf.mmd">Raw .mmd</a></nav><pre>%% pitchpilot-cf (pp-cf) — PitchPilot rebuilt on Cloudflare, STANDALONE — live architecture
+%% Independent project: NO arx, NO arx-cf. Single Worker bundle; agent runs in a CF Sandbox.
+%% Live at https://pp.langgenius.app.
+%% Single source of truth for https://livedoc.greeep.com/arch/ — read live from origin/dev.
+%% UPDATE THIS FILE whenever an iteration changes the architecture. See README.md in this dir.
+flowchart TB
+    classDef ui fill:#1f2937,stroke:#60a5fa,stroke-width:1px,color:#e5e7eb
+    classDef be fill:#0b3b4a,stroke:#22d3ee,stroke-width:1px,color:#e0f2fe
+    classDef data fill:#3b2f0b,stroke:#fbbf24,stroke-width:1px,color:#fef3c7
+    classDef runtime fill:#241b3a,stroke:#a78bfa,stroke-width:1px,color:#ede9fe
+    classDef external fill:#2f1d12,stroke:#fb923c,stroke-width:1px,color:#ffedd5
+
+    Browser[&quot;Browser — React 19 / Vite SPA&lt;br/&gt;Workspace · DeckDashboard · ChatPanel&lt;br/&gt;Preview iframe · export controls&lt;br/&gt;Timeline via SSE&quot;]:::ui
+
+    subgraph WORKER[&quot;pitchpilot-api — single Cloudflare Worker (TypeScript)&quot;]
+        direction TB
+        Router[&quot;Router + static assets&lt;br/&gt;session auth · Google OAuth · admin&quot;]:::be
+        AppRoutes[&quot;workspaces · decks · messages · versions&lt;br/&gt;artifacts · share viewer · tulpas · talents&quot;]:::be
+        InternalRoutes[&quot;internal deck routes&lt;br/&gt;stream-delta · turn-finalize · runtime-event&lt;br/&gt;tool-event · agent-events-ws&quot;]:::be
+        Router --&gt; AppRoutes
+        Router --&gt; InternalRoutes
+    end
+
+    subgraph DUR[&quot;Durable Objects&quot;]
+        direction TB
+        DeckDO{{&quot;DeckDO — per deck coordinator&lt;br/&gt;DO-local SQLite: messages · activity · turn_state&lt;br/&gt;timeline fanout · watchdog · runtime cache&lt;br/&gt;claude_session pointers · deck-scoped token minting&quot;}}:::runtime
+        AgentSandbox{{&quot;AgentSandbox DO — per deck sandbox controller&lt;br/&gt;bootWorkspace · ensurePersistentAgent&lt;br/&gt;bridge IPC proxy · abort/recycle&quot;}}:::runtime
+        DeckDO -- &quot;boot / warmup / prompt / interrupt&lt;br/&gt;DO RPC + local bridge IPC&quot; --&gt; AgentSandbox
+    end
+
+    subgraph SANDBOX[&quot;Cloudflare Sandbox container&quot;]
+        direction TB
+        Workspace[&quot;/work/deck-&amp;lt;deckId&amp;gt;&lt;br/&gt;CLAUDE.md · persona.md&lt;br/&gt;skills/ · inbox/ · artifacts/ · memory/ · context/&quot;]:::runtime
+        Bridge[&quot;pp-agent-bridge.mjs — resident stdio bridge&lt;br/&gt;HTTP control: /status /warmup /prompt /cancel /shutdown&lt;br/&gt;event WS client + HTTP fallback&quot;]:::runtime
+        Claude[&quot;Claude Code CLI&lt;br/&gt;claude -p --input-format stream-json&lt;br/&gt;--output-format stream-json --include-partial-messages&lt;br/&gt;persistent-stdio runtime · --resume session_id&quot;]:::external
+        Workspace --&gt; Bridge
+        Bridge -- &quot;JSONL user messages over stdin&quot; --&gt; Claude
+        Claude -- &quot;stream-json stdout/stderr&quot; --&gt; Bridge
+    end
+
+    subgraph STORE[&quot;State &amp; storage (Cloudflare, self-contained)&quot;]
+        direction LR
+        D1[(&quot;D1 pitchpilot&lt;br/&gt;users · workspaces · members&lt;br/&gt;decks · presentations&lt;br/&gt;tulpas · talents · settings&quot;)]:::data
+        R2[(&quot;R2 pp-blobs&lt;br/&gt;artifacts/*.html · manifests&lt;br/&gt;talents · context docs&lt;br/&gt;memory · snapshots&quot;)]:::data
+    end
+
+    Anthropic[&quot;Anthropic API&lt;br/&gt;latest Sonnet by default&lt;br/&gt;web search enabled by Claude Code tooling&quot;]:::external
+
+    Browser -- &quot;POST /api/decks/:id/send&quot; --&gt; Router
+    Browser -- &quot;GET /api/decks/:id/events (SSE)&quot; --&gt; Router
+    Browser -- &quot;GET /deck/:id/preview · /export/*&quot; --&gt; Router
+    AppRoutes -- &quot;route deck operations&quot; --&gt; DeckDO
+    AppRoutes --&gt; D1
+    AppRoutes --&gt; R2
+
+    DeckDO -- &quot;start/reuse sandbox&quot; --&gt; AgentSandbox
+    AgentSandbox -- &quot;container commands&quot; --&gt; Workspace
+    Bridge -- &quot;runtime/tool events&lt;br/&gt;WebSocket: /agent-events-ws&quot; --&gt; InternalRoutes
+    Bridge -- &quot;message deltas + finalize&lt;br/&gt;HTTP internal endpoints&quot; --&gt; InternalRoutes
+    InternalRoutes -- &quot;normalize · persist · fanout&quot; --&gt; DeckDO
+    Bridge -- &quot;scan artifacts/memory/context&lt;br/&gt;mirror changed outputs&quot; --&gt; R2
+    DeckDO -- &quot;SSE timeline: user message · thinking&lt;br/&gt;message_delta · activity · done/error&lt;br/&gt;artifact/version updates&quot; --&gt; Browser
+    Claude -- &quot;model calls&quot; --&gt; Anthropic
+
+    DeckDO -. &quot;authoritative queue + watchdog boundary&quot; .- AgentSandbox
+    WORKER -. &quot;Standalone: no arx / arx-cf runtime dependency&quot; .- STORE
+</pre></main></body>
+</html>

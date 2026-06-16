@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PitchPilot CF Architecture Notes</title>
+  <style>body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f7f7f4;color:#181816}main{max-width:1080px;margin:0 auto;padding:40px 24px 64px}a{color:#2357c6}h1{font-size:28px;line-height:1.2;margin:0 0 8px}.meta{color:#66645f;font-size:14px}pre{white-space:pre-wrap;word-break:break-word;background:#fff;border:1px solid #dedbd2;border-radius:10px;padding:20px;line-height:1.55;overflow-x:auto}nav{display:flex;gap:14px;flex-wrap:wrap;margin:20px 0 28px}@media(prefers-color-scheme:dark){body{background:#151515;color:#f2f0e8}pre{background:#1f1f1f;border-color:#36342f}.meta{color:#aaa69c}a{color:#8ab4ff}}</style>
+</head>
+<body><main><header><h1>PitchPilot CF Architecture Notes</h1><div class="meta">Source: <a href="README.md">README.md</a></div></header><nav><a href="index.html">Index</a><a href="readme.html">Architecture Notes</a><a href="pp-cf.html">Mermaid Source</a><a href="pp-cf.mmd">Raw .mmd</a></nav><pre># Live architecture diagram
+
+`pp-cf.mmd` is the **single source of truth** for the pitchpilot-cf box on the
+live architecture site:
+
+- **https://livedoc.greeep.com/arch/** (Standalone tab group)
+
+The site reads this file straight from `origin/dev` (via `git show`) on every
+load and re-renders it with Mermaid. pitchpilot-cf is a **standalone** project
+(no arx / arx-cf), so it stands on its own group. There is no separate publish
+step — **merging an update to `dev` is the publish.** The site also shows this
+file&#39;s latest commit SHA / message / timestamp.
+
+&gt; Note: this repo otherwise runs a single environment and ships code from
+&gt; `main`. The `dev` branch exists here only so the diagram tracks the same
+&gt; branch as every other node on the live site. Land diagram updates on `dev`
+&gt; (e.g. merge `main`→`dev`, or commit straight to `dev`).
+
+## Current Runtime Shape
+
+As of 2026-06-16, the default agent path is a resident Cloudflare Sandbox
+bridge that talks directly to Claude Code over stdio stream-json. ACP is no
+longer the default runtime path.
+
+Hot path:
+
+```text
+Browser
+  -&gt; Worker route
+  -&gt; DeckDO
+  -&gt; AgentSandbox DO
+  -&gt; pp-agent-bridge.mjs
+  -&gt; claude -p --input-format stream-json --output-format stream-json
+```
+
+Return path:
+
+```text
+Claude stream-json stdout
+  -&gt; pp-agent-bridge.mjs
+  -&gt; runtime/tool events over bridge WebSocket
+  -&gt; stream deltas and turn finalization over internal HTTP endpoints
+  -&gt; DeckDO timeline fanout
+  -&gt; Browser SSE
+```
+
+DeckDO is still the authoritative per-deck coordination point for queueing,
+watchdog supervision, timeline fanout, and session/runtime cache metadata.
+
+## The rule
+
+**Every iteration that changes the architecture MUST update `pp-cf.mmd` in the
+same PR.** Adding a route group, a Durable Object, a binding, or changing the
+agent/turn path (DeckDO ↔ AgentSandbox ↔ Anthropic) — if the boxes-and-arrows
+change, the diagram changes with it. A PR that alters the architecture but
+leaves this file stale is incomplete. See the matching rule in the repo root
+`CLAUDE.md`.
+
+## Editing
+
+Plain [Mermaid](https://mermaid.js.org/) `flowchart` text — diffable in review.
+Keep it at the **architecture** altitude. Preserve the `classDef` styles so all
+the diagrams stay visually consistent. Preview at &lt;https://mermaid.live&gt;.
+</pre></main></body>
+</html>

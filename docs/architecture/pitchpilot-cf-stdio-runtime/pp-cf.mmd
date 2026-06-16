@@ -1,0 +1,66 @@
+%% pitchpilot-cf (pp-cf) — PitchPilot rebuilt on Cloudflare, STANDALONE — live architecture
+%% Independent project: NO arx, NO arx-cf. Single Worker bundle; agent runs in a CF Sandbox.
+%% Live at https://pp.langgenius.app.
+%% Single source of truth for https://livedoc.greeep.com/arch/ — read live from origin/dev.
+%% UPDATE THIS FILE whenever an iteration changes the architecture. See README.md in this dir.
+flowchart TB
+    classDef ui fill:#1f2937,stroke:#60a5fa,stroke-width:1px,color:#e5e7eb
+    classDef be fill:#0b3b4a,stroke:#22d3ee,stroke-width:1px,color:#e0f2fe
+    classDef data fill:#3b2f0b,stroke:#fbbf24,stroke-width:1px,color:#fef3c7
+    classDef runtime fill:#241b3a,stroke:#a78bfa,stroke-width:1px,color:#ede9fe
+    classDef external fill:#2f1d12,stroke:#fb923c,stroke-width:1px,color:#ffedd5
+
+    Browser["Browser — React 19 / Vite SPA<br/>Workspace · DeckDashboard · ChatPanel<br/>Preview iframe · export controls<br/>Timeline via SSE"]:::ui
+
+    subgraph WORKER["pitchpilot-api — single Cloudflare Worker (TypeScript)"]
+        direction TB
+        Router["Router + static assets<br/>session auth · Google OAuth · admin"]:::be
+        AppRoutes["workspaces · decks · messages · versions<br/>artifacts · share viewer · tulpas · talents"]:::be
+        InternalRoutes["internal deck routes<br/>stream-delta · turn-finalize · runtime-event<br/>tool-event · agent-events-ws"]:::be
+        Router --> AppRoutes
+        Router --> InternalRoutes
+    end
+
+    subgraph DUR["Durable Objects"]
+        direction TB
+        DeckDO{{"DeckDO — per deck coordinator<br/>DO-local SQLite: messages · activity · turn_state<br/>timeline fanout · watchdog · runtime cache<br/>claude_session pointers · deck-scoped token minting"}}:::runtime
+        AgentSandbox{{"AgentSandbox DO — per deck sandbox controller<br/>bootWorkspace · ensurePersistentAgent<br/>bridge IPC proxy · abort/recycle"}}:::runtime
+        DeckDO -- "boot / warmup / prompt / interrupt<br/>DO RPC + local bridge IPC" --> AgentSandbox
+    end
+
+    subgraph SANDBOX["Cloudflare Sandbox container"]
+        direction TB
+        Workspace["/work/deck-&lt;deckId&gt;<br/>CLAUDE.md · persona.md<br/>skills/ · inbox/ · artifacts/ · memory/ · context/"]:::runtime
+        Bridge["pp-agent-bridge.mjs — resident stdio bridge<br/>HTTP control: /status /warmup /prompt /cancel /shutdown<br/>event WS client + HTTP fallback"]:::runtime
+        Claude["Claude Code CLI<br/>claude -p --input-format stream-json<br/>--output-format stream-json --include-partial-messages<br/>persistent-stdio runtime · --resume session_id"]:::external
+        Workspace --> Bridge
+        Bridge -- "JSONL user messages over stdin" --> Claude
+        Claude -- "stream-json stdout/stderr" --> Bridge
+    end
+
+    subgraph STORE["State & storage (Cloudflare, self-contained)"]
+        direction LR
+        D1[("D1 pitchpilot<br/>users · workspaces · members<br/>decks · presentations<br/>tulpas · talents · settings")]:::data
+        R2[("R2 pp-blobs<br/>artifacts/*.html · manifests<br/>talents · context docs<br/>memory · snapshots")]:::data
+    end
+
+    Anthropic["Anthropic API<br/>latest Sonnet by default<br/>web search enabled by Claude Code tooling"]:::external
+
+    Browser -- "POST /api/decks/:id/send" --> Router
+    Browser -- "GET /api/decks/:id/events (SSE)" --> Router
+    Browser -- "GET /deck/:id/preview · /export/*" --> Router
+    AppRoutes -- "route deck operations" --> DeckDO
+    AppRoutes --> D1
+    AppRoutes --> R2
+
+    DeckDO -- "start/reuse sandbox" --> AgentSandbox
+    AgentSandbox -- "container commands" --> Workspace
+    Bridge -- "runtime/tool events<br/>WebSocket: /agent-events-ws" --> InternalRoutes
+    Bridge -- "message deltas + finalize<br/>HTTP internal endpoints" --> InternalRoutes
+    InternalRoutes -- "normalize · persist · fanout" --> DeckDO
+    Bridge -- "scan artifacts/memory/context<br/>mirror changed outputs" --> R2
+    DeckDO -- "SSE timeline: user message · thinking<br/>message_delta · activity · done/error<br/>artifact/version updates" --> Browser
+    Claude -- "model calls" --> Anthropic
+
+    DeckDO -. "authoritative queue + watchdog boundary" .- AgentSandbox
+    WORKER -. "Standalone: no arx / arx-cf runtime dependency" .- STORE
