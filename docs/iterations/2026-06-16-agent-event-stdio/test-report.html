@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent Event Stdio Runtime Test Report</title>
+  <style>body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f7f7f4;color:#181816}main{max-width:960px;margin:0 auto;padding:40px 24px 64px}a{color:#2357c6}h1{font-size:28px;line-height:1.2;margin:0 0 8px}.meta{color:#66645f;font-size:14px}pre{white-space:pre-wrap;word-break:break-word;background:#fff;border:1px solid #dedbd2;border-radius:10px;padding:20px;line-height:1.55;overflow-x:auto}nav{display:flex;gap:14px;flex-wrap:wrap;margin:20px 0 28px}@media(prefers-color-scheme:dark){body{background:#151515;color:#f2f0e8}pre{background:#1f1f1f;border-color:#36342f}.meta{color:#aaa69c}a{color:#8ab4ff}}</style>
+</head>
+<body><main><header><h1>Agent Event Stdio Runtime Test Report</h1><div class="meta">Source: <a href="test-report.txt">test-report.txt</a></div></header><nav><a href="index.html">Index</a><a href="design.html">Agent Event Stdio Runtime Design</a>
+<a href="test-report.html">Agent Event Stdio Runtime Test Report</a>
+<a href="test-summary.html">Agent Event Stdio Runtime Test Summary</a>
+<a href="review.html">Agent Event Stdio Runtime Review</a></nav><pre>$ node --check containers/oasis/pp-cli/bin/pp-agent-bridge.mjs &amp;&amp; node --check containers/oasis/pp-cli/bin/pp-run-agent.mjs
+
+$ npx tsx --test apps/api/src/agent/runtimeCache.test.ts
+TAP version 13
+# Subtest: accepts a matching persistent stdio runtime cache
+ok 1 - accepts a matching persistent stdio runtime cache
+  ---
+  duration_ms: 1.642824
+  type: &#39;test&#39;
+  ...
+# Subtest: still accepts a matching legacy persistent ACP runtime cache
+ok 2 - still accepts a matching legacy persistent ACP runtime cache
+  ---
+  duration_ms: 0.240113
+  type: &#39;test&#39;
+  ...
+# Subtest: invalidates when deck configuration changed
+ok 3 - invalidates when deck configuration changed
+  ---
+  duration_ms: 1.013083
+  type: &#39;test&#39;
+  ...
+# Subtest: ignores volatile deck timestamps when configuration is unchanged
+ok 4 - ignores volatile deck timestamps when configuration is unchanged
+  ---
+  duration_ms: 0.520826
+  type: &#39;test&#39;
+  ...
+# Subtest: invalidates when cache TTL expires
+ok 5 - invalidates when cache TTL expires
+  ---
+  duration_ms: 0.228463
+  type: &#39;test&#39;
+  ...
+# Subtest: invalidates when model changed
+ok 6 - invalidates when model changed
+  ---
+  duration_ms: 0.199704
+  type: &#39;test&#39;
+  ...
+# Subtest: requires persistent runtime and an existing session
+ok 7 - requires persistent runtime and an existing session
+  ---
+  duration_ms: 0.462087
+  type: &#39;test&#39;
+  ...
+# Subtest: accepts token only when beyond refresh skew
+ok 8 - accepts token only when beyond refresh skew
+  ---
+  duration_ms: 0.254891
+  type: &#39;test&#39;
+  ...
+# Subtest: updates session without dropping cached token metadata
+ok 9 - updates session without dropping cached token metadata
+  ---
+  duration_ms: 0.854003
+  type: &#39;test&#39;
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 315.309307
+
+$ npm run typecheck --workspace=@pp/api
+
+&gt; @pp/api@0.0.0 typecheck
+&gt; tsc --noEmit
+
+</pre></main></body>
+</html>

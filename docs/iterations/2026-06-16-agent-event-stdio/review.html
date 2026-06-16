@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent Event Stdio Runtime Review</title>
+  <style>body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f7f7f4;color:#181816}main{max-width:960px;margin:0 auto;padding:40px 24px 64px}a{color:#2357c6}h1{font-size:28px;line-height:1.2;margin:0 0 8px}.meta{color:#66645f;font-size:14px}pre{white-space:pre-wrap;word-break:break-word;background:#fff;border:1px solid #dedbd2;border-radius:10px;padding:20px;line-height:1.55;overflow-x:auto}nav{display:flex;gap:14px;flex-wrap:wrap;margin:20px 0 28px}@media(prefers-color-scheme:dark){body{background:#151515;color:#f2f0e8}pre{background:#1f1f1f;border-color:#36342f}.meta{color:#aaa69c}a{color:#8ab4ff}}</style>
+</head>
+<body><main><header><h1>Agent Event Stdio Runtime Review</h1><div class="meta">Source: <a href="review.md">review.md</a></div></header><nav><a href="index.html">Index</a><a href="design.html">Agent Event Stdio Runtime Design</a>
+<a href="test-report.html">Agent Event Stdio Runtime Test Report</a>
+<a href="test-summary.html">Agent Event Stdio Runtime Test Summary</a>
+<a href="review.html">Agent Event Stdio Runtime Review</a></nav><pre># Review
+
+## Findings
+
+No blocking code-review findings from the local diff review.
+
+## Residual Risks
+
+- The new resident bridge has been syntax-checked but not yet exercised inside the Cloudflare sandbox image with a real Claude Code process.
+- Image prompt blocks are conservatively converted to textual file references in stdio mode. Rich image transport should be validated separately against the deployed Claude CLI version.
+- Workspace output mirroring now scans `artifacts/`, `memory/`, and `context/` after successful turns. This preserves direct filesystem writes but should be smoke-tested with a real deck generation.
+- Interrupt now uses SIGINT/SIGTERM because ACP soft cancel is gone. Browser interrupt behavior needs deployed smoke validation.
+
+## Verification
+
+- JavaScript syntax checks passed.
+- Runtime cache tests passed.
+- API TypeScript typecheck passed.
+
+</pre></main></body>
+</html>
